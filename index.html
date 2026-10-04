@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What Should I Eat?</title>
+<meta name="theme-color" content="#f97316">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --bg:#fff7ed; --card:#ffffff; --text:#1c1917; --muted:#78716c;
+    --accent:#f97316; --accent-dark:#ea580c; --accent-ink:#ffffff;
+    --border:#f1e4d3; --radius:16px; --shadow:0 2px 12px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0c0a09; --card:#1c1917; --text:#fafaf9; --muted:#a8a29e;
+      --accent:#fb923c; --accent-dark:#f97316; --accent-ink:#1c1917;
+      --border:#292524; --shadow:0 2px 12px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.45;
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:20px 16px 110px;}
+  header.top{margin:6px 2px 18px;}
+  header.top h1{font-size:26px; margin:0 0 4px; letter-spacing:-.5px;}
+  header.top p{margin:0; color:var(--muted); font-size:14px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px; margin-bottom:14px;}
+  .card h2{font-size:17px; margin:0 0 10px;}
+  .btn{
+    display:block; width:100%; border:none; cursor:pointer; font-size:17px; font-weight:700;
+    padding:16px; border-radius:var(--radius); background:var(--accent); color:var(--accent-ink);
+    margin:10px 0;
+  }
+  .btn:active{transform:scale(.98); background:var(--accent-dark);}
+  .btn.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+  .btn.small{font-size:14px; padding:10px 14px; width:auto; display:inline-block; margin:4px 6px 4px 0;}
+  .btn.danger{background:transparent; color:#dc2626; border:2px solid #dc2626;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .chip{
+    border:1.5px solid var(--border); background:var(--card); color:var(--text);
+    border-radius:999px; padding:9px 14px; font-size:14px; cursor:pointer;
+  }
+  .chip.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700;}
+  .field{margin:12px 0;}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:6px;}
+  .field input[type=text], .field input[type=url], .field textarea{
+    width:100%; font-size:16px; padding:12px; border-radius:12px;
+    border:1.5px solid var(--border); background:var(--card); color:var(--text);
+  }
+  .field textarea{resize:vertical; min-height:64px;}
+  .seg{display:flex; gap:8px;}
+  .seg button{
+    flex:1; padding:12px; font-size:15px; border-radius:12px; cursor:pointer;
+    border:1.5px solid var(--border); background:var(--card); color:var(--text);
+  }
+  .seg button.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700;}
+  .spot{border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; background:var(--card);}
+  .spot .name{font-weight:700; font-size:16px;}
+  .spot .meta{color:var(--muted); font-size:13px; margin:4px 0;}
+  .spot .orders{font-size:14px; margin:4px 0;}
+  .spot .rowbtns{margin-top:8px;}
+  .linklike{background:none; border:none; color:var(--accent); font-size:14px; cursor:pointer; padding:6px 4px;}
+  .muted{color:var(--muted); font-size:14px;}
+  .empty{text-align:center; padding:28px 12px; color:var(--muted);}
+  .empty .big{font-size:40px; margin-bottom:8px;}
+  .result-name{font-size:22px; font-weight:800; letter-spacing:-.3px; margin:0 0 4px;}
+  .result-meta{color:var(--muted); font-size:14px; margin-bottom:8px;}
+  .result-orders{font-size:15px; background:var(--bg); border-radius:10px; padding:10px 12px; margin:10px 0;}
+  .runner{display:flex; align-items:center; justify-content:space-between;
+    border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-top:8px;}
+  .runner .rn{font-weight:600;}
+  .runner .rm{font-size:12px; color:var(--muted);}
+  .mealrow{display:flex; justify-content:space-between; padding:9px 2px; border-bottom:1px solid var(--border); font-size:14px;}
+  .mealrow:last-child{border-bottom:none;}
+  .mealrow .d{color:var(--muted); font-size:12px;}
+  nav.tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    background:var(--card); border-top:1px solid var(--border);
+    display:flex; max-width:480px; margin:0 auto;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; cursor:pointer; padding:12px 4px 10px;
+    font-size:11px; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  nav.tabbar button .ic{font-size:20px;}
+  nav.tabbar button.on{color:var(--accent); font-weight:700;}
+  .hidden{display:none !important;}
+  /* modal */
+  #modal{position:fixed; inset:0; z-index:50; display:flex; align-items:flex-end; justify-content:center;
+    background:rgba(0,0,0,.45);}
+  #modalCard{background:var(--card); width:100%; max-width:480px; max-height:88vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));}
+  #modalCard h2{margin:0 0 12px; font-size:19px;}
+  .modalbtns{display:flex; gap:10px; margin-top:16px;}
+  .modalbtns .btn{margin:0;}
+  /* onboarding */
+  #onboarding{position:fixed; inset:0; z-index:60; background:var(--bg); overflow-y:auto;}
+  #onboarding .wrap{padding-top:48px;}
+  #onboarding h1{font-size:28px; letter-spacing:-.5px;}
+  /* toast */
+  #toast{position:fixed; left:50%; bottom:90px; transform:translateX(-50%) translateY(20px);
+    background:#1c1917; color:#fafaf9; padding:12px 18px; border-radius:999px; font-size:14px;
+    opacity:0; transition:all .25s; z-index:70; pointer-events:none; max-width:90%; text-align:center;}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  @media (prefers-color-scheme: dark){ #toast{background:#fafaf9; color:#1c1917;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>What should I eat?</h1>
+    <p>Your personal Boston food picker</p>
+  </header>
+
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="card">
+      <h2>How are you feeling?</h2>
+      <div class="chips" id="moodRow">
+        <button class="chip on" data-mood="surprise">Surprise me</button>
+        <button class="chip" data-mood="comfort">Comfort food</button>
+        <button class="chip" data-mood="new">Something new</button>
+        <button class="chip" data-mood="cheap">Save money</button>
+      </div>
+      <button class="btn" id="btnRecommend">Pick for me</button>
+    </div>
+
+    <div class="card hidden" id="resultCard">
+      <p class="muted" style="margin:0 0 6px;">Tonight's pick</p>
+      <p class="result-name" id="resName"></p>
+      <p class="result-meta" id="resMeta"></p>
+      <div class="result-orders hidden" id="resOrdersWrap">
+        <strong>Your usual order</strong>
+        <div id="resOrders"></div>
+      </div>
+      <a class="btn" id="btnOrder" href="#" target="_blank" rel="noopener" style="text-decoration:none; text-align:center;">Order on DoorDash</a>
+      <button class="btn secondary" id="btnAte">I ate this</button>
+      <button class="linklike" id="btnNext">Not feeling it — show another</button>
+      <div id="runnerUps"></div>
+    </div>
+
+    <div class="card">
+      <h2>Recently eaten</h2>
+      <div id="recentList"><p class="muted">Nothing logged yet.</p></div>
+      <button class="btn secondary small" id="btnQuickLog">Log something else</button>
+    </div>
+  </section>
+
+  <!-- SPOTS -->
+  <section id="view-spots" class="hidden">
+    <div class="card">
+      <h2>My spots <span class="muted" id="spotsCount"></span></h2>
+      <p class="muted" style="margin-top:0;">Your real favorite restaurants. The picker only recommends from this list.</p>
+      <button class="btn" id="btnAddSpot">Add a spot</button>
+      <div id="spotsList" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="hidden">
+    <div class="card">
+      <h2>Cuisines I like</h2>
+      <div class="chips" id="likeChips"></div>
+    </div>
+    <div class="card">
+      <h2>Cuisines I avoid</h2>
+      <div class="chips" id="dislikeChips"></div>
+    </div>
+    <div class="card">
+      <h2>Usual budget</h2>
+      <div class="seg" id="budgetSeg">
+        <button data-b="1">$ cheap</button>
+        <button data-b="2">$$ normal</button>
+        <button data-b="3">$$$ treat</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Data</h2>
+      <p class="muted">Everything is saved on this phone only.</p>
+      <button class="btn secondary small" id="btnExport">Copy backup</button>
+      <button class="btn secondary small" id="btnImport">Restore backup</button>
+      <button class="btn danger small" id="btnReset">Delete everything</button>
+    </div>
+  </section>
+</div>
+
+<nav class="tabbar">
+  <button data-tab="home" class="on"><span class="ic">🍽️</span>Home</button>
+  <button data-tab="spots"><span class="ic">📍</span>My Spots</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>Settings</button>
+</nav>
+
+<div id="modal" class="hidden"><div id="modalCard"></div></div>
+<div id="toast"></div>
+
+<div id="onboarding" class="hidden">
+  <div class="wrap">
+    <h1>What should I eat?</h1>
+    <p class="muted">Two quick steps and you'll never stare at DoorDash blankly again.</p>
+    <div class="card">
+      <h2>1. What cuisines do you like?</h2>
+      <div class="chips" id="obChips"></div>
+    </div>
+    <button class="btn" id="obContinue">Continue</button>
+    <button class="linklike" id="obSkip">Skip for now</button>
+  </div>
+</div>
+<script>
+"use strict";
+/* ---------- storage ---------- */
+var STORE_KEY = "whatShouldIEat.v1";
+var CUISINES = ["Korean","Chinese","Japanese","Sushi","Italian","Pizza","Mexican","Tacos",
+  "American","Burgers","Thai","Vietnamese","Indian","Mediterranean","BBQ","Seafood",
+  "Sandwiches","Dessert","Breakfast","Healthy"];
+var MOODS = { surprise:"Surprise me", comfort:"Comfort food", "new":"Something new", cheap:"Save money" };
+
+function defaultState(){
+  return { spots:[], meals:[], profile:{ likes:[], dislikes:[], budget:2 }, onboarded:false };
+}
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    var s = JSON.parse(raw);
+    if(!s || !Array.isArray(s.spots)) return defaultState();
+    s.meals = Array.isArray(s.meals) ? s.meals : [];
+    s.profile = s.profile || { likes:[], dislikes:[], budget:2 };
+    return s;
+  }catch(e){ return defaultState(); }
+}
+var state = loadState();
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast("Couldn't save on this browser."); }
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(d){
+  d = d || new Date();
+  var m = ("0"+(d.getMonth()+1)).slice(-2), day = ("0"+d.getDate()).slice(-2);
+  return d.getFullYear()+"-"+m+"-"+day;
+}
+function fmtDate(iso){
+  try{
+    var p = iso.split("-");
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  }catch(e){ return iso; }
+}
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+var toastTimer = null;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+
+/* ---------- tabs ---------- */
+var currentTab = "home";
+document.querySelectorAll("nav.tabbar button").forEach(function(b){
+  b.addEventListener("click", function(){
+    currentTab = b.getAttribute("data-tab");
+    document.querySelectorAll("nav.tabbar button").forEach(function(x){
+      x.classList.toggle("on", x===b);
+    });
+    ["home","spots","settings"].forEach(function(t){
+      document.getElementById("view-"+t).classList.toggle("hidden", t!==currentTab);
+    });
+    if(currentTab==="spots") renderSpots();
+    if(currentTab==="settings") renderSettings();
+    window.scrollTo(0,0);
+  });
+});
+
+/* ---------- modal ---------- */
+function openModal(html){
+  var m = document.getElementById("modal");
+  document.getElementById("modalCard").innerHTML = html;
+  m.classList.remove("hidden");
+}
+function closeModal(){ document.getElementById("modal").classList.add("hidden"); }
+document.getElementById("modal").addEventListener("click", function(e){
+  if(e.target.id==="modal") closeModal();
+});
+
+/* ---------- chips builder ---------- */
+function chipRow(container, items, selected, onToggle){
+  container.innerHTML = "";
+  items.forEach(function(c){
+    var b = document.createElement("button");
+    b.className = "chip" + (selected.indexOf(c)>=0 ? " on" : "");
+    b.textContent = c;
+    b.addEventListener("click", function(){ onToggle(c); });
+    container.appendChild(b);
+  });
+}
+</script>
+<script>
+"use strict";
+/* ---------- onboarding ---------- */
+var obLikes = [];
+function showOnboarding(){
+  document.getElementById("onboarding").classList.remove("hidden");
+  var renderOb = function(){
+    chipRow(document.getElementById("obChips"), CUISINES, obLikes, function(c){
+      var i = obLikes.indexOf(c);
+      if(i>=0) obLikes.splice(i,1); else obLikes.push(c);
+      renderOb();
+    });
+  };
+  renderOb();
+}
+function finishOnboarding(){
+  state.profile.likes = obLikes.slice();
+  state.onboarded = true; save();
+  document.getElementById("onboarding").classList.add("hidden");
+  toast("You're set. Add your favorite spots next.");
+}
+document.getElementById("obContinue").addEventListener("click", finishOnboarding);
+document.getElementById("obSkip").addEventListener("click", finishOnboarding);
+if(!state.onboarded) showOnboarding();
+
+/* ---------- spots ---------- */
+function priceStr(p){ return p===1?"$":p===2?"$$":"$$$"; }
+
+function renderSpots(){
+  var list = document.getElementById("spotsList");
+  document.getElementById("spotsCount").textContent = state.spots.length ? "("+state.spots.length+")" : "";
+  if(!state.spots.length){
+    list.innerHTML = '<div class="empty"><div class="big">📍</div><p>No spots yet.<br>Add the restaurants you actually order from.</p></div>';
+    return;
+  }
+  list.innerHTML = "";
+  state.spots.forEach(function(sp){
+    var d = document.createElement("div");
+    d.className = "spot";
+    var html = '<div class="name">'+esc(sp.name)+'</div>';
+    html += '<div class="meta">'+esc(sp.cuisines.join(", "))+' · '+priceStr(sp.price)+'</div>';
+    if(sp.orders && sp.orders.length)
+      html += '<div class="orders">Usual: '+esc(sp.orders.join("; "))+'</div>';
+    html += '<div class="rowbtns">';
+    if(sp.url) html += '<a class="linklike" href="'+esc(sp.url)+'" target="_blank" rel="noopener">Open in DoorDash →</a>';
+    html += '<button class="linklike" data-edit="'+sp.id+'">Edit</button>';
+    html += '<button class="linklike" data-del="'+sp.id+'" style="color:#dc2626;">Delete</button></div>';
+    d.innerHTML = html;
+    list.appendChild(d);
+  });
+  list.querySelectorAll("[data-edit]").forEach(function(b){
+    b.addEventListener("click", function(){ openSpotForm(getSpot(b.getAttribute("data-edit"))); });
+  });
+  list.querySelectorAll("[data-del]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var id = b.getAttribute("data-del");
+      var sp = getSpot(id);
+      if(confirm('Delete "'+sp.name+'"?')){
+        state.spots = state.spots.filter(function(x){ return x.id!==id; });
+        save(); renderSpots(); toast("Deleted.");
+      }
+    });
+  });
+}
+function getSpot(id){ return state.spots.filter(function(s){ return s.id===id; })[0]; }
+
+document.getElementById("btnAddSpot").addEventListener("click", function(){ openSpotForm(null); });
+
+function openSpotForm(sp){
+  var isNew = !sp;
+  sp = sp || { id:uid(), name:"", cuisines:[], orders:[], price:2, url:"", note:"" };
+  var selCuisines = sp.cuisines.slice();
+  var html = '<h2>'+(isNew?"Add a spot":"Edit spot")+'</h2>'
+    + '<div class="field"><label>Restaurant name</label>'
+    + '<input type="text" id="fName" value="'+esc(sp.name)+'" placeholder="e.g. Panda Express"></div>'
+    + '<div class="field"><label>Cuisines</label><div class="chips" id="fCuisines"></div></div>'
+    + '<div class="field"><label>Your usual order (one per line)</label>'
+    + '<textarea id="fOrders" placeholder="Orange chicken&#10;Fried rice">'+esc((sp.orders||[]).join("\n"))+'</textarea></div>'
+    + '<div class="field"><label>Price</label><div class="seg" id="fPrice">'
+    + [1,2,3].map(function(p){
+        return '<button data-p="'+p+'" class="'+(sp.price===p?"on":"")+'">'+priceStr(p)+'</button>';
+      }).join("") + '</div></div>'
+    + '<div class="field"><label>DoorDash link (optional)</label>'
+    + '<input type="url" id="fUrl" value="'+esc(sp.url)+'" placeholder="Paste the restaurant\u2019s DoorDash link"></div>'
+    + '<div class="modalbtns"><button class="btn" id="fSave">Save</button>'
+    + '<button class="btn secondary" id="fCancel">Cancel</button></div>';
+  openModal(html);
+
+  var price = sp.price;
+  var renderCuisines = function(){
+    chipRow(document.getElementById("fCuisines"), CUISINES, selCuisines, function(c){
+      var i = selCuisines.indexOf(c);
+      if(i>=0) selCuisines.splice(i,1); else selCuisines.push(c);
+      renderCuisines();
+    });
+  };
+  renderCuisines();
+  document.querySelectorAll("#fPrice button").forEach(function(b){
+    b.addEventListener("click", function(){
+      price = +b.getAttribute("data-p");
+      document.querySelectorAll("#fPrice button").forEach(function(x){
+        x.classList.toggle("on", +x.getAttribute("data-p")===price);
+      });
+    });
+  });
+  document.getElementById("fCancel").addEventListener("click", closeModal);
+  document.getElementById("fSave").addEventListener("click", function(){
+    var name = document.getElementById("fName").value.trim();
+    if(!name){ toast("Give it a name first."); return; }
+    var orders = document.getElementById("fOrders").value.split("\n")
+      .map(function(x){ return x.trim(); }).filter(Boolean);
+    var url = document.getElementById("fUrl").value.trim();
+    var rec = { id:sp.id, name:name, cuisines:selCuisines, orders:orders, price:price, url:url };
+    if(isNew) state.spots.push(rec);
+    else{
+      var i = state.spots.findIndex(function(x){ return x.id===sp.id; });
+      if(i>=0) state.spots[i] = rec;
+    }
+    save(); closeModal(); renderSpots();
+    toast(isNew ? "Spot added." : "Spot updated.");
+  });
+}
+
+/* ---------- recommendation engine ---------- */
+var currentMood = "surprise";
+var currentPicks = [];
+var pickIndex = 0;
+
+document.querySelectorAll("#moodRow .chip").forEach(function(b){
+  b.addEventListener("click", function(){
+    currentMood = b.getAttribute("data-mood");
+    document.querySelectorAll("#moodRow .chip").forEach(function(x){
+      x.classList.toggle("on", x===b);
+    });
+  });
+});
+
+function daysSince(iso){
+  try{
+    var p = iso.split("-");
+    var then = new Date(+p[0], +p[1]-1, +p[2]);
+    return Math.floor((new Date() - then) / 86400000);
+  }catch(e){ return null; }
+}
+function lastEatenDaysAgo(spotId){
+  var ds = state.meals.filter(function(m){ return m.spotId===spotId; })
+    .map(function(m){ return daysSince(m.date); })
+    .filter(function(d){ return d!==null; });
+  if(!ds.length) return null;
+  return Math.min.apply(null, ds);
+}
+function scoreSpot(sp){
+  var s = 10 + Math.random()*3;
+  var likes = state.profile.likes, dislikes = state.profile.dislikes;
+  if(sp.cuisines.some(function(c){ return likes.indexOf(c)>=0; })) s += 4;
+  if(sp.cuisines.some(function(c){ return dislikes.indexOf(c)>=0; })) s -= 9;
+  if(sp.price > state.profile.budget) s -= 3;
+  var last = lastEatenDaysAgo(sp.id);
+  if(last===null) s += 1.5;
+  else if(last<2) s -= 6;
+  else if(last<4) s -= 3;
+  else s += 1;
+  if(currentMood==="new" && last===null) s += 5;
+  if(currentMood==="comfort" && sp.cuisines.some(function(c){ return likes.indexOf(c)>=0; })) s += 3;
+  if(currentMood==="cheap" && sp.price===1) s += 4;
+  if(currentMood==="cheap" && sp.price===3) s -= 4;
+  return s;
+}
+document.getElementById("btnRecommend").addEventListener("click", function(){
+  if(!state.spots.length){
+    toast("Add your spots first — the picker only recommends from your list.");
+    document.querySelector('nav.tabbar button[data-tab="spots"]').click();
+    return;
+  }
+  currentPicks = state.spots.slice()
+    .map(function(sp){ return { sp:sp, score:scoreSpot(sp) }; })
+    .sort(function(a,b){ return b.score-a.score; })
+    .map(function(x){ return x.sp; })
+    .slice(0, Math.min(3, state.spots.length));
+  pickIndex = 0;
+  showPick();
+});
+function showPick(){
+  var sp = currentPicks[pickIndex];
+  if(!sp) return;
+  document.getElementById("resultCard").classList.remove("hidden");
+  document.getElementById("resName").textContent = sp.name;
+  document.getElementById("resMeta").textContent =
+    (sp.cuisines.join(", ")||"Your spot") + " · " + priceStr(sp.price);
+  var ow = document.getElementById("resOrdersWrap");
+  if(sp.orders && sp.orders.length){
+    ow.classList.remove("hidden");
+    document.getElementById("resOrders").textContent = sp.orders.join("; ");
+  } else ow.classList.add("hidden");
+  document.getElementById("btnOrder").href = sp.url || "https://www.doordash.com/food/";
+  var ru = document.getElementById("runnerUps");
+  ru.innerHTML = "";
+  currentPicks.forEach(function(other, i){
+    if(i===pickIndex) return;
+    var d = document.createElement("div");
+    d.className = "runner";
+    d.innerHTML = '<div><div class="rn">'+esc(other.name)+'</div>'
+      + '<div class="rm">'+esc(other.cuisines.join(", "))+' · '+priceStr(other.price)+'</div></div>';
+    var b = document.createElement("button");
+    b.className = "btn small secondary"; b.textContent = "Pick";
+    b.addEventListener("click", function(){ pickIndex = i; showPick(); });
+    d.appendChild(b);
+    ru.appendChild(d);
+  });
+  document.getElementById("resultCard").scrollIntoView({behavior:"smooth", block:"start"});
+}
+document.getElementById("btnNext").addEventListener("click", function(){
+  if(currentPicks.length<2){ toast("That's the only spot — add more for variety."); return; }
+  pickIndex = (pickIndex+1) % currentPicks.length;
+  showPick();
+});
+document.getElementById("btnAte").addEventListener("click", function(){
+  var sp = currentPicks[pickIndex];
+  if(!sp) return;
+  logMeal(sp.id, sp.name);
+  toast("Logged. Nice choice.");
+  renderRecent();
+});
+
+/* ---------- meals / recent ---------- */
+function logMeal(spotId, label){
+  state.meals.unshift({ id:uid(), spotId:spotId||null, label:label, date:todayStr() });
+  state.meals = state.meals.slice(0, 60);
+  save();
+}
+function renderRecent(){
+  var el = document.getElementById("recentList");
+  if(!state.meals.length){ el.innerHTML = '<p class="muted">Nothing logged yet.</p>'; return; }
+  el.innerHTML = "";
+  state.meals.slice(0,10).forEach(function(m){
+    var d = document.createElement("div");
+    d.className = "mealrow";
+    d.innerHTML = '<span>'+esc(m.label)+'</span><span class="d">'+esc(fmtDate(m.date))+'</span>';
+    el.appendChild(d);
+  });
+}
+document.getElementById("btnQuickLog").addEventListener("click", function(){
+  openModal('<h2>Log a meal</h2>'
+    + '<div class="field"><label>What did you eat?</label>'
+    + '<input type="text" id="qLabel" placeholder="e.g. Chipotle bowl"></div>'
+    + '<div class="modalbtns"><button class="btn" id="qSave">Log it</button>'
+    + '<button class="btn secondary" id="qCancel">Cancel</button></div>');
+  document.getElementById("qCancel").addEventListener("click", closeModal);
+  document.getElementById("qSave").addEventListener("click", function(){
+    var v = document.getElementById("qLabel").value.trim();
+    if(!v){ toast("Type what you ate."); return; }
+    logMeal(null, v); closeModal(); renderRecent(); toast("Logged.");
+  });
+});
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  var likes = state.profile.likes, dislikes = state.profile.dislikes;
+  chipRow(document.getElementById("likeChips"), CUISINES, likes, function(c){
+    var i = likes.indexOf(c);
+    if(i>=0) likes.splice(i,1); else { likes.push(c);
+      var j = dislikes.indexOf(c); if(j>=0) dislikes.splice(j,1); }
+    save(); renderSettings();
+  });
+  chipRow(document.getElementById("dislikeChips"), CUISINES, dislikes, function(c){
+    var i = dislikes.indexOf(c);
+    if(i>=0) dislikes.splice(i,1); else { dislikes.push(c);
+      var j = likes.indexOf(c); if(j>=0) likes.splice(j,1); }
+    save(); renderSettings();
+  });
+  document.querySelectorAll("#budgetSeg button").forEach(function(b){
+    var on = +b.getAttribute("data-b")===state.profile.budget;
+    b.classList.toggle("on", on);
+    b.onclick = function(){
+      state.profile.budget = +b.getAttribute("data-b"); save(); renderSettings();
+    };
+  });
+}
+document.getElementById("btnExport").addEventListener("click", function(){
+  var data = JSON.stringify(state);
+  var done = function(){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(data).then(
+        function(){ toast("Backup copied. Save it somewhere safe."); },
+        function(){ prompt("Copy your backup:", data); });
+    } else prompt("Copy your backup:", data);
+  };
+  done();
+});
+document.getElementById("btnImport").addEventListener("click", function(){
+  var raw = prompt("Paste your backup text:");
+  if(!raw) return;
+  try{
+    var s = JSON.parse(raw);
+    if(!s || !Array.isArray(s.spots)) throw new Error("bad");
+    state = s; save(); renderSpots(); renderSettings(); renderRecent();
+    toast("Backup restored.");
+  }catch(e){ toast("That backup didn't look right."); }
+});
+document.getElementById("btnReset").addEventListener("click", function(){
+  if(confirm("Delete everything? This can't be undone.")){
+    state = defaultState(); state.onboarded = true; save();
+    renderSpots(); renderSettings(); renderRecent();
+    document.getElementById("resultCard").classList.add("hidden");
+    toast("All data deleted.");
+  }
+});
+
+/* ---------- init ---------- */
+renderRecent();
+</script>
+</body>
+</html>
