@@ -38,10 +38,13 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           PYTHONFAULTHANDLER: "1"
         run: |
-          python -c "import cv2, pymupdf, sqlalchemy, reportlab; print('libs ok')"; "exit code (libs only): $LASTEXITCODE"
-          python -c "from PySide6.QtWidgets import QApplication; app = QApplication([]); print('qt app ok')"; "exit code (QApplication): $LASTEXITCODE"
-          python -c "from PySide6.QtWidgets import QApplication, QWidget; app = QApplication([]); w = QWidget(); w.show(); app.processEvents(); print('widget ok')"; "exit code (widget): $LASTEXITCODE"
-          python -c "import sys; sys.argv=['x']; import runpy; from dentec.ui.main_window import MainWindow; print('import ok')"; "exit code (import UI): $LASTEXITCODE"
+          $env:DENTEC_NO_HARD_EXIT = "1"
+          python -m pytest -q -p no:faulthandler tests/test_core.py; "exit code (core tests, natural exit): $LASTEXITCODE"
+          python -m pytest -q -p no:faulthandler tests/test_services.py -k "not ocr"; "exit code (services w/o OCR): $LASTEXITCODE"
+          python -m pytest -q -p no:faulthandler tests/test_services.py -k "ocr"; "exit code (OCR tests): $LASTEXITCODE"
+          python -m pytest -q -p no:faulthandler tests/test_ui.py; "exit code (UI test): $LASTEXITCODE"
+          python main.py --self-test; "exit code (self-test): $LASTEXITCODE"
+          python main.py --self-test --ui; "exit code (self-test --ui): $LASTEXITCODE"
 
       - name: Run test suite on Windows
         env:

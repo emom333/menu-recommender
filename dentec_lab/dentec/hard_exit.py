@@ -17,6 +17,10 @@ def hard_exit(code: int) -> None:
             pass
     if sys.platform.startswith("win"):
         import ctypes
-        k32 = ctypes.windll.kernel32
+        from ctypes import wintypes
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetCurrentProcess.restype = wintypes.HANDLE
+        k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        k32.TerminateProcess.restype = wintypes.BOOL
         k32.TerminateProcess(k32.GetCurrentProcess(), int(code))
     os._exit(int(code))
