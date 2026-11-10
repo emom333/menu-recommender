@@ -9,23 +9,21 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..config import get_paths
 from ..db.models import Attachment, OcrDocument
 from ..ocr.engine import SUPPORTED_EXT, LabSlipOCR, SlipResult, find_tesseract, load_pages, save_page_png
 from . import cases as case_svc
 from .common import BusinessError, audit, current_user, get_setting
 
 
-def import_file(s: Session, path: str | Path, run_ocr: bool = True, engine: LabSlipOCR | None = None) -> list[OcrDocument]:
-    """Copy a JPG/PNG/PDF into the document store and queue each page for review."""
+def prepare_file(path: str | Path, engine: LabSlipOCR | None, run_ocr: bool = True) -> list[dict]:
+    """Store the original, split pages and run OCR.  No database access, so it
+    can run in a background thread."""
     path = Path(path)
     if path.suffix.lower() not in SUPPORTED_EXT:
         raise BusinessError(f"{path.name}: unsupported file type. Use JPG, PNG or PDF.")
     src_rel = case_svc.store_document(path, subfolder=f"labslips/{datetime.now():%Y/%m}")
     pages = load_pages(case_svc.document_path(src_rel))
-    if engine is None and run_ocr:
-        engine = LabSlipOCR(tesseract_cmd=find_tesseract(get_setting(s, "tesseract_path", "")))
-    docs = []
+    out = []
     for n, img in enumerate(pages, start=1):
         if path.suffix.lower() == ".pdf" or len(pages) > 1:
             rel = f"labslips/{datetime.now():%Y/%m}/{uuid.uuid4().hex[:10]}_{path.stem[:40]}_p{n}.png"
@@ -33,13 +31,32 @@ def import_file(s: Session, path: str | Path, run_ocr: bool = True, engine: LabS
         else:
             rel = src_rel
         result = engine.process_image(img) if (run_ocr and engine) else SlipResult(error="OCR not run")
-        doc = OcrDocument(rel_path=rel, source_rel_path=src_rel, original_name=path.name, page_number=n,
-                          status="Pending", extracted_json=result.to_json(), ocr_engine=result.engine)
+        out.append({"rel_path": rel, "source_rel_path": src_rel, "original_name": path.name, "page_number": n,
+                    "extracted_json": result.to_json(), "ocr_engine": result.engine})
+    return out
+
+
+def save_prepared(s: Session, prepared: list[dict]) -> list[OcrDocument]:
+    docs = []
+    for d in prepared:
+        doc = OcrDocument(status="Pending", **d)
         s.add(doc)
         s.flush()
         docs.append(doc)
-    audit(s, "import_labslip", "ocr_document", docs[0].id if docs else None, f"{path.name}: {len(docs)} page(s)")
+    if docs:
+        audit(s, "import_labslip", "ocr_document", docs[0].id, f"{docs[0].original_name}: {len(docs)} page(s)")
     return docs
+
+
+def make_engine(s: Session) -> LabSlipOCR:
+    return LabSlipOCR(tesseract_cmd=find_tesseract(get_setting(s, "tesseract_path", "")))
+
+
+def import_file(s: Session, path: str | Path, run_ocr: bool = True, engine: LabSlipOCR | None = None) -> list[OcrDocument]:
+    """Copy a JPG/PNG/PDF into the document store and queue each page for review."""
+    if engine is None and run_ocr:
+        engine = make_engine(s)
+    return save_prepared(s, prepare_file(path, engine, run_ocr))
 
 
 def rerun_ocr(s: Session, doc_id: int) -> OcrDocument:

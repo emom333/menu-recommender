@@ -315,6 +315,12 @@ def existing_for_period(s: Session, office_id: int, year: int, month: int, exclu
     return list(s.scalars(q))
 
 
+def find_draft(s: Session, office_id: int, year: int, month: int) -> Invoice | None:
+    return s.scalar(select(Invoice).where(Invoice.office_id == office_id, Invoice.status == "Draft",
+                                          Invoice.kind == "Invoice", Invoice.period_year == year,
+                                          Invoice.period_month == month).limit(1))
+
+
 def last_number_hint(s: Session, office_id: int) -> str:
     """The most recent number used for this office, shown only as a reference hint."""
     inv = s.scalar(select(Invoice).where(Invoice.office_id == office_id, Invoice.status == "Finalized",

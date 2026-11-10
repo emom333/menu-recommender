@@ -3,7 +3,7 @@ from datetime import date
 
 import pytest
 
-from dentec.db.models import Procedure
+
 from dentec.services import cases as cs, invoices as inv_svc, offices, pricing
 from dentec.services.cases import CaseInput, ItemInput, PriceOverrideRequired
 from dentec.services.common import BusinessError, CurrentUser, set_current_user
