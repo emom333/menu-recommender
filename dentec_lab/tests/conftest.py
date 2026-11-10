@@ -39,8 +39,6 @@ def pytest_unconfigure(config):
     """Exit immediately after the summary is printed.  Qt objects destroyed during
     normal interpreter shutdown can crash on Windows and turn a green run red."""
     import os
-    import sys
     if os.environ.get("QT_QPA_PLATFORM") == "offscreen":
-        sys.stdout.flush()
-        sys.stderr.flush()
-        os._exit(_EXIT["status"])
+        from dentec.hard_exit import hard_exit
+        hard_exit(_EXIT["status"])

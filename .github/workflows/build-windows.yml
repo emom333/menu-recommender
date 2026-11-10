@@ -31,6 +31,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
+      - name: Diagnose native crashes at process exit (informational)
+        continue-on-error: true
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          python -c "import cv2, pymupdf, sqlalchemy, reportlab; print('libs ok')"; "exit code (libs only): $LASTEXITCODE"
+          python -c "from PySide6.QtWidgets import QApplication; app = QApplication([]); print('qt app ok')"; "exit code (QApplication): $LASTEXITCODE"
+          python -c "from PySide6.QtWidgets import QApplication, QWidget; app = QApplication([]); w = QWidget(); w.show(); app.processEvents(); print('widget ok')"; "exit code (widget): $LASTEXITCODE"
+          python -c "import sys; sys.argv=['x']; import runpy; from dentec.ui.main_window import MainWindow; print('import ok')"; "exit code (import UI): $LASTEXITCODE"
+
       - name: Run test suite on Windows
         env:
           QT_QPA_PLATFORM: offscreen

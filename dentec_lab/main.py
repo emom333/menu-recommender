@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -105,9 +104,8 @@ def main() -> int:
     args = sys.argv[1:]
     if "--self-test" in args:
         rc = self_test(ui="--ui" in args)
-        if sys.stdout is not None:
-            sys.stdout.flush()
-        os._exit(rc)  # skip Qt teardown at interpreter exit
+        from dentec.hard_exit import hard_exit
+        hard_exit(rc)  # skip native library teardown at process exit
 
     from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
@@ -156,6 +154,11 @@ def main() -> int:
     win.showMaximized()
     rc = app.exec()
     database.close_db()
+    logging.shutdown()
+    # Everything is saved and closed; skip native library teardown, which can
+    # crash on some Windows systems while DLLs are unloaded.
+    from dentec.hard_exit import hard_exit
+    hard_exit(rc)
     return rc
 
 
