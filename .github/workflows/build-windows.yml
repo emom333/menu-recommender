@@ -31,21 +31,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Diagnose native crashes at process exit (informational)
-        continue-on-error: true
-        shell: pwsh
-        env:
-          QT_QPA_PLATFORM: offscreen
-          PYTHONFAULTHANDLER: "1"
-        run: |
-          $env:DENTEC_NO_HARD_EXIT = "1"
-          python -m pytest -q -p no:faulthandler tests/test_core.py; "exit code (core tests, natural exit): $LASTEXITCODE"
-          python -m pytest -q -p no:faulthandler tests/test_services.py -k "not ocr"; "exit code (services w/o OCR): $LASTEXITCODE"
-          python -m pytest -q -p no:faulthandler tests/test_services.py -k "ocr"; "exit code (OCR tests): $LASTEXITCODE"
-          python -m pytest -q -p no:faulthandler tests/test_ui.py; "exit code (UI test): $LASTEXITCODE"
-          python main.py --self-test; "exit code (self-test): $LASTEXITCODE"
-          python main.py --self-test --ui; "exit code (self-test --ui): $LASTEXITCODE"
-
       - name: Run test suite on Windows
         env:
           QT_QPA_PLATFORM: offscreen
