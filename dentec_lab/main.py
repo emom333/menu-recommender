@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -103,7 +104,10 @@ def self_test(ui: bool = False) -> int:
 def main() -> int:
     args = sys.argv[1:]
     if "--self-test" in args:
-        return self_test(ui="--ui" in args)
+        rc = self_test(ui="--ui" in args)
+        if sys.stdout is not None:
+            sys.stdout.flush()
+        os._exit(rc)  # skip Qt teardown at interpreter exit
 
     from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 

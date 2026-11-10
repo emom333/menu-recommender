@@ -60,7 +60,12 @@ def ui(home, monkeypatch, tmp_path):
     yield w, app, msgs, opened, tmp_path
     w.backup_timer.stop()
     w.idle.timer.stop()
-    w.close()
+    from PySide6.QtCore import QThreadPool
+    QThreadPool.globalInstance().waitForDone()
+    app.removeEventFilter(w.idle)
+    w.hide()
+    w.deleteLater()
+    app.processEvents()
 
 
 def test_full_month_workflow(ui, monkeypatch):

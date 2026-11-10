@@ -25,3 +25,22 @@ def s(home):
     yield sess
     sess.rollback()
     sess.close()
+
+
+
+_EXIT = {"status": 0}
+
+
+def pytest_sessionfinish(session, exitstatus):
+    _EXIT["status"] = int(exitstatus)
+
+
+def pytest_unconfigure(config):
+    """Exit immediately after the summary is printed.  Qt objects destroyed during
+    normal interpreter shutdown can crash on Windows and turn a green run red."""
+    import os
+    import sys
+    if os.environ.get("QT_QPA_PLATFORM") == "offscreen":
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(_EXIT["status"])
