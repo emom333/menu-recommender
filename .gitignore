@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+dentec_lab/build/
+dentec_lab/dist/
+dentec_lab/*.spec.bak
